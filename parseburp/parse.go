@@ -87,14 +87,19 @@ func parseRequest(request string) (string, string) {
 
 	scanner := bufio.NewReader(strings.NewReader(request))
 
-	req, _ := http.ReadRequest(scanner)
+	req, err := http.ReadRequest(scanner)
+	if err != nil {
+		fmt.Println("Error: http.ReadRequest()")
+		return "error", "error"
+	}
+
 	for name, head := range req.Header {
 		for _, h := range head {
 			headers = append(headers, fmt.Sprintf("%v: %v", name, h))
 		}
 	}
 
-	err := req.ParseForm()
+	err = req.ParseForm()
 	if err != nil {
 		fmt.Println("Error: ParseForm()")
 		return "error", "error"

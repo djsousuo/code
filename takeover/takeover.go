@@ -74,6 +74,7 @@ func checkHost(host string, cname string, client *http.Client, fp []Fingerprints
 	if err != nil {
 		return false
 	}
+	req.Header.Set("User-Agent", "User-Agent: Mozilla/5.0 (Linux; Android 4.0.4; Galaxy Nexus Build/IMM76B) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133 Mobile Safari/535.19")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -88,7 +89,6 @@ func checkHost(host string, cname string, client *http.Client, fp []Fingerprints
 				if strings.Contains(cname, fp[n].Cname[x]) {
 					for z := range fp[n].Fingerprint {
 						if strings.Contains(bodyStr, fp[n].Fingerprint[z]) {
-							resp.Body.Close()
 							return true
 						}
 					}
@@ -124,7 +124,7 @@ func main() {
 		}
 	}
 
-	timeout := time.Duration(100000 * 10000)
+	timeout := time.Duration(100000 * 100000)
 	var transport = &http.Transport{
 		MaxIdleConns:      30,
 		IdleConnTimeout:   time.Second,
