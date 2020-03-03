@@ -174,6 +174,6 @@ func main() {
 		hosts <- scanner.Text()
 	}
 
-	close(hosts)
 	wg.Wait()
+	close(hosts)
 }

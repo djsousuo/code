@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"fmt"
-	"io/ioutil"
+	//"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -14,35 +14,44 @@ import (
 	"time"
 )
 
-func checkHost(host string, client *http.Client) {
+type Entry struct {
+	URL    string `json:"url"`
+	Method string `json:"method"`
+	Params string `json:"params"`
+}
+
+func checkHost(host string, params string, method string, client *http.Client) {
 	originCheck := true
-	req, err := http.NewRequest("GET", host, nil)
+	req, err := http.NewRequest(method, host, strings.NewReader(params))
 	if err != nil {
-		return
+		log.Fatal(err)
 	}
 
 	if originCheck == true {
 		req.Header.Set("Origin", "evil.com")
 	}
+	req.Header.Set("PHPSESSID", "t2l9le1hd9bvahp6qfjfqa7fk3")
 	/*
-	        req.Header.Set("PHPSESSID", "gm3lb9d2fi28tvna4sncteb043")
-		req.Header.Set("Host", "movsx.dev")
+		        req.Header.Set("PHPSESSID", "gm3lb9d2fi28tvna4sncteb043")
+			req.Header.Set("Host", "movsx.dev")
 	*/
 
 	resp, err := client.Do(req)
 
 	if resp != nil {
+		if method == "POST" && resp.StatusCode == 200 {
+			fmt.Println("[*] VULNERABLE (CSRF): " + host)
+		}
 		if resp.StatusCode == 405 {
 			fmt.Println("[*] Bad request: " + host)
 		}
-		bodyBytes, _ := ioutil.ReadAll(resp.Body)
-		bodyStr := string(bodyBytes)
-		if strings.Contains(bodyStr, "pageReady") {
-			fmt.Println("[*] Vuln: " + host)
-		}
+		/*
+			bodyBytes, _ := ioutil.ReadAll(resp.Body)
+				bodyStr := string(bodyBytes)
+		*/
+
 		origin := resp.Header.Get("Access-Control-Allow-Origin")
 		if origin == "evil.com" || origin == "*" || origin == "*.evil.com" {
-			fmt.Println("[*] Host matched Origin header: " + host)
 			if resp.Header.Get("Access-Control-Allow-Credentials") == "true" {
 				fmt.Println("[*] Vulnerable (CORS): " + host)
 			}
@@ -61,7 +70,7 @@ func main() {
 		}
 	}
 
-	timeout := time.Duration(1000000 * 10000)
+	timeout := time.Duration(1000000 * 1000000)
 	var transport = &http.Transport{
 		MaxIdleConns:      30,
 		IdleConnTimeout:   time.Second,
@@ -78,14 +87,27 @@ func main() {
 		Timeout:   timeout,
 	}
 
-	hosts := make(chan string)
+	queue := make(chan string)
 	var wg sync.WaitGroup
 
 	for i := 0; i < 20; i++ {
 		wg.Add(1)
 		go func() {
-			for host := range hosts {
-				checkHost(host, client)
+			for entry := range queue {
+				/* GET https://host.com param1=a&param2=b */
+				method, URL, params := "", "", ""
+				tmp := strings.Split(entry, " ")
+				if len(tmp) < 2 {
+					continue
+				}
+
+				if len(tmp) == 2 {
+					method, URL, params = tmp[0], tmp[1], ""
+				} else {
+					method, URL, params = tmp[0], tmp[1], tmp[2]
+				}
+				checkHost(URL, params, method, client)
+
 			}
 			wg.Done()
 		}()
@@ -93,9 +115,8 @@ func main() {
 
 	scanner := bufio.NewScanner(hostInput)
 	for scanner.Scan() {
-		hosts <- scanner.Text()
+		queue <- scanner.Text()
 	}
-
-	close(hosts)
+	close(queue)
 	wg.Wait()
 }
