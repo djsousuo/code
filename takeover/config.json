@@ -364,5 +364,77 @@
 		],
 		"fingerprint": [],
 		"nxdomain": true
-	}
+	},
+	{
+                "service": "fly",
+                "cname": [
+                        "fly.io"
+                ],
+                "fingerprint": ["404 Not Found"],
+                "nxdomain": false
+        },
+	{
+                "service": "Tilda",
+                "cname": [
+                        "tilda.cc"
+                ],
+                "fingerprint": ["Please go to the site settings"],
+                "nxdomain": false
+        },
+	{
+                "service": "frontify",
+                "cname": [
+                        "frontify.com"
+                ],
+                "fingerprint": ["404 - Page Not Found"],
+                "nxdomain": false
+        },
+	{
+                "service": "landingi",
+                "cname": [
+                        "landingi.com"
+                ],
+                "fingerprint": ["It looks like you're lost"],
+                "nxdomain": false
+        },
+	{
+                "service": "frontify",
+                "cname": [
+                        "frontify.com"
+                ],
+                "fingerprint": ["404 - Page Not Found"],
+                "nxdomain": false
+        },
+	{
+                "service": "canny",
+                "cname": [
+                        "canny.io"
+                ],
+                "fingerprint": ["Company Not Found"],
+                "nxdomain": false
+        },
+	{
+                "service": "ngrok",
+                "cname": [
+                        "ngrok.io"
+                ],
+                "fingerprint": ["Tunnel"],
+                "nxdomain": false
+        },
+	{
+                "service": "hubspot",
+                "cname": [
+                        "hubspot.com"
+                ],
+                "fingerprint": ["Domain not found"],
+                "nxdomain": false
+        },
+	{
+                "service": "smartling",
+                "cname": [
+                        "smartling.com"
+                ],
+                "fingerprint": ["Domain is not configured"],
+                "nxdomain": false
+        }
 ]
