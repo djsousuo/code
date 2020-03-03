@@ -324,7 +324,15 @@
 			".blob.core.windows.net",
 			".azure-api.net",
 			".azurehdinsight.net",
-			".azureedge.net"
+			".azureedge.net",
+                        ".database.windows.net",
+                        ".azuredatalakestore.net",
+                        ".search.windows.net",
+                        ".azurecr.io",
+                        ".redis.cache.windows.net",
+                        ".azurehdinsight.net",
+                        ".servicebus.windows.net",
+                        ".visualstudio.com"
 		],
 		"fingerprint": [],
 		"nxdomain": true
