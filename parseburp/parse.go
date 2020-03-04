@@ -56,6 +56,10 @@ type Logs struct {
 	Params  string `json:"params"`
 }
 
+type Options struct {
+	Encoding bool
+}
+
 func decodeURL(data string) string {
 	tmp, err := url.QueryUnescape(data)
 	if err != nil {
