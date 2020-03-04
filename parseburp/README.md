@@ -25,6 +25,10 @@ Extract all javascript:
 
 `./parseburp <session> | jq -j 'select (.status == 200 and .responselength > 0) | .time, " ", .url, " ", .protocol," ", .mimetype, "\n"' | grep SCRIPT`
 
-Extract all unique entries where parameters include "url"
+Extract all unique entries where parameters include "url":
 
 `./parseburp <session> | jq 'select(.params | contains("url")) | .url' | sort -u`
+
+Generate csrfr data:
+
+`./parseburp <session> | jq -s '[.[] | {url, method, params}]' | csrfr`
