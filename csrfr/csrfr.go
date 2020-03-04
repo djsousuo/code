@@ -11,6 +11,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -33,17 +34,13 @@ func checkHost(host string, params string, method string, client *http.Client) {
 	if originCheck == true {
 		req.Header.Set("Origin", "evil.com")
 	}
-	req.Header.Set("PHPSESSID", "t2l9le1hd9bvahp6qfjfqa7fk3")
-	/*
-		        req.Header.Set("PHPSESSID", "gm3lb9d2fi28tvna4sncteb043")
-			req.Header.Set("Host", "movsx.dev")
-	*/
-
 	resp, err := client.Do(req)
 
 	if resp != nil {
 		if method == "POST" && resp.StatusCode == 200 {
 			fmt.Println("[*] VULNERABLE (CSRF): " + host + " Parameters: \"" + params + "\"")
+		} else if method == "POST" && (resp.StatusCode > 300 && resp.StatusCode < 400) {
+			fmt.Println("[*] PRELIMINARY (CSRF): " + host + " Got redirected.")
 		}
 		if resp.StatusCode == 405 {
 			fmt.Println("[*] Bad request: " + host)
