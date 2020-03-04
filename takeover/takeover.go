@@ -83,6 +83,7 @@ func checkHost(host string, cname string, client *http.Client, fp []Fingerprints
 
 	if resp != nil {
 		bodyBytes, _ := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
 		bodyStr := string(bodyBytes)
 		for n := range fp {
 			for x := range fp[n].Cname {
@@ -174,6 +175,6 @@ func main() {
 		hosts <- scanner.Text()
 	}
 
-	wg.Wait()
 	close(hosts)
+	wg.Wait()
 }
