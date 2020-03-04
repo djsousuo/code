@@ -1,10 +1,13 @@
+/* expects JSON input in the form of { url, method, params }
+ * you can get this by piping parseburp output to jq -s '[.[] | {url, method, params}]'
+ */
 package main
 
 import (
-	"bufio"
 	"crypto/tls"
+	"encoding/json"
 	"fmt"
-	//"io/ioutil"
+	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -14,9 +17,9 @@ import (
 	"time"
 )
 
-type Entry struct {
-	URL    string `json:"url"`
+type Targets struct {
 	Method string `json:"method"`
+	URL    string `json:"url"`
 	Params string `json:"params"`
 }
 
@@ -40,7 +43,7 @@ func checkHost(host string, params string, method string, client *http.Client) {
 
 	if resp != nil {
 		if method == "POST" && resp.StatusCode == 200 {
-			fmt.Println("[*] VULNERABLE (CSRF): " + host)
+			fmt.Println("[*] VULNERABLE (CSRF): " + host + " Parameters: \"" + params + "\"")
 		}
 		if resp.StatusCode == 405 {
 			fmt.Println("[*] Bad request: " + host)
@@ -53,7 +56,7 @@ func checkHost(host string, params string, method string, client *http.Client) {
 		origin := resp.Header.Get("Access-Control-Allow-Origin")
 		if origin == "evil.com" || origin == "*" || origin == "*.evil.com" {
 			if resp.Header.Get("Access-Control-Allow-Credentials") == "true" {
-				fmt.Println("[*] Vulnerable (CORS): " + host)
+				fmt.Println("[*] VULNERABLE (CORS): " + host)
 			}
 		}
 	}
@@ -61,6 +64,7 @@ func checkHost(host string, params string, method string, client *http.Client) {
 
 func main() {
 	var err error
+	var targets []Targets
 	hostInput := os.Stdin
 
 	if len(os.Args) > 1 {
@@ -87,35 +91,31 @@ func main() {
 		Timeout:   timeout,
 	}
 
-	queue := make(chan string)
+	queue := make(chan Targets)
 	var wg sync.WaitGroup
 
 	for i := 0; i < 20; i++ {
 		wg.Add(1)
 		go func() {
-			for entry := range queue {
-				/* GET https://host.com param1=a&param2=b */
-				method, URL, params := "", "", ""
-				tmp := strings.Split(entry, " ")
-				if len(tmp) < 2 {
-					continue
-				}
-
-				if len(tmp) == 2 {
-					method, URL, params = tmp[0], tmp[1], ""
-				} else {
-					method, URL, params = tmp[0], tmp[1], tmp[2]
-				}
-				checkHost(URL, params, method, client)
-
+			for x := range queue {
+				checkHost(x.URL, x.Params, x.Method, client)
 			}
 			wg.Done()
 		}()
 	}
 
-	scanner := bufio.NewScanner(hostInput)
-	for scanner.Scan() {
-		queue <- scanner.Text()
+	fp, err := ioutil.ReadAll(hostInput)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = json.Unmarshal(fp, &targets)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	for n := range targets {
+		queue <- targets[n]
 	}
 	close(queue)
 	wg.Wait()
