@@ -69,7 +69,7 @@ func dnsNx(host string, cname string, fp []Fingerprints) bool {
 	return false
 }
 
-func checkHost(host string, cname string, client *http.Client, fp []Fingerprints) bool {
+func checkHost(host string, cname string, client *http.Client, fp []string) bool {
 	req, err := http.NewRequest("GET", host, nil)
 	if err != nil {
 		return false
@@ -85,19 +85,12 @@ func checkHost(host string, cname string, client *http.Client, fp []Fingerprints
 		bodyBytes, _ := ioutil.ReadAll(resp.Body)
 		resp.Body.Close()
 		bodyStr := string(bodyBytes)
-		for n := range fp {
-			for x := range fp[n].Cname {
-				if strings.Contains(cname, fp[n].Cname[x]) {
-					for z := range fp[n].Fingerprint {
-						if strings.Contains(bodyStr, fp[n].Fingerprint[z]) {
-							return true
-						}
-					}
-				}
+		for i := range fp {
+			if strings.Contains(bodyStr, fp[i]) {
+				return true
 			}
 		}
 	}
-
 	return false
 }
 
@@ -159,9 +152,15 @@ func main() {
 						continue
 					}
 
-					if checkHost(host, cname, client, fpItems) {
-						fmt.Println("[*] VULNERABLE: " + host + " (" + cname + ")")
-						continue
+					for n := range fpItems {
+						for x := range fpItems[n].Cname {
+							if strings.Contains(cname, fpItems[n].Cname[x]) {
+								if checkHost(host, cname, client, fpItems[n].Fingerprint) {
+									fmt.Println("[*] VULNERABLE: " + host + " (" + cname + ")")
+									continue
+								}
+							}
+						}
 					}
 
 				}
