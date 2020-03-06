@@ -142,12 +142,12 @@ func main() {
 				cname, found, index := dnsCname(host, fpItems)
 				if found {
 					if fpItems[index].Nxdomain && dnsNx(host, cname) {
-                                                fmt.Println("[*] " + fpItems[index].Service + ") NXDOMAIN: " + host + " CNAME: " + cname)
+						fmt.Println("[*] " + fpItems[index].Service + " NXDOMAIN: " + host + " CNAME: " + cname)
 						continue
 					}
 
 					if checkHost(host, cname, client, fpItems[index].Fingerprint) {
-                                                fmt.Println("[*] " + fpItems[index].Service + " " + host + " CNAME: " + cname)
+						fmt.Println("[*] " + fpItems[index].Service + " " + host + " CNAME: " + cname)
 						continue
 					}
 				}
