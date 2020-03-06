@@ -23,14 +23,14 @@ type Fingerprints struct {
 	Nxdomain    bool     `json:"nxdomain"`
 }
 
-func dnsCname(host string, fp []Fingerprints) (string, bool) {
+func dnsCname(host string, fp []Fingerprints) (string, bool, int) {
 	cname := ""
 	msg := new(dns.Msg)
 	msg.SetQuestion(string(strings.Split(host, "://")[1])+".", dns.TypeCNAME)
 	reply, err := dns.Exchange(msg, "4.2.2.4:53")
 
 	if err != nil {
-		return "[-] DNS Lookup", false
+		return "[-] DNS Lookup", false, -1
 	}
 
 	for _, answer := range reply.Answer {
@@ -42,27 +42,21 @@ func dnsCname(host string, fp []Fingerprints) (string, bool) {
 	for n := range fp {
 		for x := range fp[n].Cname {
 			if strings.Contains(cname, fp[n].Cname[x]) {
-				return cname, true
+				return cname, true, n
 			}
 		}
 	}
 
-	return "[-] No matches found", false
+	return "[-] No matches found", false, -1
 }
 
-func dnsNx(host string, cname string, fp []Fingerprints) bool {
+func dnsNx(host string, cname string) bool {
 	name := strings.Split(host, "://")[1]
 	_, err := net.LookupHost(name)
 
 	if err != nil {
-		for n := range fp {
-			if fp[n].Nxdomain == true {
-				for x := range fp[n].Cname {
-					if strings.Contains(cname, fp[n].Cname[x]) && strings.Contains(err.Error(), "no such host") {
-						return true
-					}
-				}
-			}
+		if strings.Contains(err.Error(), "no such host") {
+			return true
 		}
 	}
 
@@ -145,24 +139,17 @@ func main() {
 		wg.Add(1)
 		go func() {
 			for host := range hosts {
-				cname, found := dnsCname(host, fpItems)
+				cname, found, index := dnsCname(host, fpItems)
 				if found {
-					if dnsNx(host, cname, fpItems) {
-						fmt.Println("[*] VULNERABLE (NXDOMAIN): " + host + " (" + cname + ")")
+					if fpItems[index].Nxdomain && dnsNx(host, cname) {
+                                                fmt.Println("[*] " + fpItems[index].Service + ") NXDOMAIN: " + host + " CNAME: " + cname)
 						continue
 					}
 
-					for n := range fpItems {
-						for x := range fpItems[n].Cname {
-							if strings.Contains(cname, fpItems[n].Cname[x]) {
-								if checkHost(host, cname, client, fpItems[n].Fingerprint) {
-									fmt.Println("[*] VULNERABLE: " + host + " (" + cname + ")")
-									continue
-								}
-							}
-						}
+					if checkHost(host, cname, client, fpItems[index].Fingerprint) {
+                                                fmt.Println("[*] " + fpItems[index].Service + " " + host + " CNAME: " + cname)
+						continue
 					}
-
 				}
 			}
 			wg.Done()
