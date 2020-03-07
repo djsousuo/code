@@ -5,48 +5,63 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
+	"strings"
+	"sync"
 )
 
-func ErrorMsg(url string, err error) {
-	fmt.Printf("%s ERROR\n")
-}
-
-func Worker(url string) {
+func fetch(url string) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		ErrorMsg(url, err)
 		return
 	}
 
 	client := http.DefaultClient
 	resp, err := client.Do(req)
 	if err != nil {
-		ErrorMsg(url, err)
-		return
+		log.Fatal(err)
 	}
 
+	fmt.Println(resp.StatusCode, url, strings.Join(resp.Header["Content-Type"], " "), resp.Header["Content-Length"], resp.Header["Server"])
 	resp.Body.Close()
-	fmt.Println(url, resp.StatusCode, resp.Header["Content-Type"], resp.Header["Content-Length"], resp.Header["Server"])
 }
 
 func main() {
 	var method string
-	var verbose bool
+	var concurrency int
 
 	flag.StringVar(&method, "method", "GET", "HTTP Method to use (GET/POST)")
-	flag.BoolVar(&verbose, "verbose", false, "Verbose output")
+	flag.IntVar(&concurrency, "c", 20, "Number of concurrent requests (default: 20)")
 	flag.Parse()
-
-	if verbose {
-		fmt.Println("Using HTTP Method:", method)
-	}
 
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
+	urls := make(chan string)
+	var wg sync.WaitGroup
+
+	for i := 0; i < concurrency; i++ {
+		wg.Add(1)
+		go func() {
+			for u := range urls {
+				fetch(u)
+			}
+			wg.Done()
+		}()
+	}
+
 	input := bufio.NewScanner(os.Stdin)
 	for input.Scan() {
-		Worker(input.Text())
+		current := input.Text()
+		if !strings.HasPrefix(current, "http://") && !strings.HasPrefix(current, "https://") {
+			current = "https://" + current
+		}
+
+		fmt.Println("Trying " + current)
+		urls <- current
 	}
+
+	close(urls)
+	wg.Wait()
 }
