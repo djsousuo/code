@@ -6,11 +6,13 @@ package main
 import (
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
+	"net/http/httptrace"
 	"net/url"
 	"os"
 	"strings"
@@ -24,36 +26,119 @@ type Targets struct {
 	Params string `json:"params"`
 }
 
-func checkHost(host string, params string, method string, client *http.Client) {
-	originCheck := true
-	req, err := http.NewRequest(method, host, strings.NewReader(params))
-	if err != nil {
-		log.Fatal(err)
-	}
+type Payloads struct {
+	Attack  string `json:"attack"`
+	Payload string `json:"payload"`
+}
 
-	if originCheck == true {
+/*
+ * primary HTTP handler
+ *
+ */
+func checkHost(target Targets, payload Payloads, client *http.Client) error {
+	req, _ := http.NewRequest(target.Method, target.URL, strings.NewReader(target.Params))
+	positive := false
+
+	switch payload.Attack {
+	case "cors":
 		req.Header.Set("Origin", "evil.com")
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		if resp != nil {
+			origin := resp.Header.Get("Access-Control-Allow-Origin")
+			if origin == "evil.com" || origin == "*" || origin == "*.evil.com" {
+				if resp.Header.Get("Access-Control-Allow-Credentials") == "true" {
+					positive = true
+				}
+			}
+		}
+	case "csrf":
+		if target.Method != "POST" {
+			return errors.New("Method not POST on CSRF")
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+
+		if resp != nil && resp.StatusCode == 200 {
+			positive = true
+		}
+	case "sqli":
+		var start time.Time
+		trace := &httptrace.ClientTrace{
+			GotFirstResponseByte: func() {
+				fmt.Printf("Time since start: %v\n", time.Since(start))
+				// this isn't right clearly. placeholder
+				if time.Since(start) > 10000 {
+					positive = true
+				}
+			},
+		}
+		req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+		start = time.Now()
+		if _, err := http.DefaultTransport.RoundTrip(req); err != nil {
+			return err
+		}
+	case "xss":
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+
+		bodyBytes, err := ioutil.ReadAll(resp.Body)
+		bodyStr := string(bodyBytes)
+		if err != nil {
+			return err
+		}
+
+		if strings.Contains(bodyStr, payload.Payload) {
+			positive = true
+		}
 	}
-	resp, err := client.Do(req)
 
-	if resp != nil {
-		if method == "POST" && resp.StatusCode == 200 {
-			fmt.Println("[*] VULNERABLE (CSRF): " + host + " Parameters: \"" + params + "\"")
-		} else if method == "POST" && (resp.StatusCode > 300 && resp.StatusCode < 400) {
-			fmt.Println("[*] PRELIMINARY (CSRF): " + host + " Got redirected.")
-		}
-		if resp.StatusCode == 405 {
-			fmt.Println("[*] Bad request: " + host)
-		}
-		/*
-			bodyBytes, _ := ioutil.ReadAll(resp.Body)
-				bodyStr := string(bodyBytes)
-		*/
+	if positive == true {
+		fmt.Printf("VULNERABLE: (%s - %s) %s %s - Parameters: %s\n", payload.Attack, payload.Payload, target.Method, target.URL, target.Params)
+	}
 
-		origin := resp.Header.Get("Access-Control-Allow-Origin")
-		if origin == "evil.com" || origin == "*" || origin == "*.evil.com" {
-			if resp.Header.Get("Access-Control-Allow-Credentials") == "true" {
-				fmt.Println("[*] VULNERABLE (CORS): " + host)
+	return nil
+}
+
+/*
+ * generate valid queries using supplied payloads, for each set of URL/parameters
+ *
+ */
+func generateFuzz(target Targets, payload Payloads) {
+	if len(target.Params) > 0 {
+		v, err := url.ParseQuery(target.Params)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		/* make a copy of the map so we can easily permute one key per pass */
+		done := make(map[string][]string, len(v))
+		for k, v := range v {
+			done[k] = v
+		}
+
+		/* we need to generate 3 permutations of every value: original, FUZZ, and originalFUZZ */
+		q := url.Values{}
+		for key := range done {
+			for i := 0; i < 2; i++ {
+				for k, value := range v {
+					if key == k && i == 0 {
+						q.Set(k, payload.Payload)
+					} else if key == k && i == 1 {
+						q.Set(k, string(strings.Join(value, ",")+payload.Payload))
+					} else {
+						q.Set(k, strings.Join(value, ","))
+					}
+				}
+				if target.Method == "GET" {
+					fmt.Printf("%s?%s\n", strings.Split(target.URL, "?")[0], q.Encode())
+				}
 			}
 		}
 	}
@@ -62,6 +147,7 @@ func checkHost(host string, params string, method string, client *http.Client) {
 func main() {
 	var err error
 	var targets []Targets
+	var payloads []Payloads
 	hostInput := os.Stdin
 
 	if len(os.Args) > 1 {
@@ -94,19 +180,40 @@ func main() {
 	for i := 0; i < 20; i++ {
 		wg.Add(1)
 		go func() {
-			for x := range queue {
-				checkHost(x.URL, x.Params, x.Method, client)
+			for target := range queue {
+				for x := range payloads {
+					/*
+					 * need to account for 20 (or however many) go routines with X amount of payloads, with multiple variations for each one
+					 * throttling will need to be added as well as better go routine management so each one isn't caught up with 500 payloads per URL
+					 */
+					err := checkHost(target, payloads[x], client)
+					if err != nil {
+						fmt.Println(err)
+					}
+				}
 			}
 			wg.Done()
 		}()
 	}
 
+	// clean this shit up
 	fp, err := ioutil.ReadAll(hostInput)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	err = json.Unmarshal(fp, &targets)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	pinput, err := os.Open("payloads.json")
+	p, err := ioutil.ReadAll(pinput)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = json.Unmarshal(p, &payloads)
 	if err != nil {
 		log.Fatal(err)
 	}
