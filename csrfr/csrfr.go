@@ -7,6 +7,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -146,9 +147,17 @@ func generateFuzz(target Targets, payload Payloads) {
 
 func main() {
 	var err error
+	var concurrency int
+	var throttle int
+	var verbose bool
 	var targets []Targets
 	var payloads []Payloads
 	hostInput := os.Stdin
+
+	flag.IntVar(&concurrency, "c", 20, "Number of concurrent requests (default: 20)")
+	flag.IntVar(&throttle, "d", 60, "Number of requests per minute (default: 60)")
+	flag.BoolVar(&verbose, "v", false, "Verbose mode (default: false)")
+	flag.Parse()
 
 	if len(os.Args) > 1 {
 		hostInput, err = os.Open(os.Args[1])
@@ -177,7 +186,7 @@ func main() {
 	queue := make(chan Targets)
 	var wg sync.WaitGroup
 
-	for i := 0; i < 20; i++ {
+	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
 		go func() {
 			for target := range queue {
