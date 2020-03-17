@@ -190,6 +190,14 @@ func main() {
 		wg.Add(1)
 		go func() {
 			for target := range queue {
+				for _, special := range []string{"csrf", "cors"} {
+					/* these don't require permutation and will be sent as-is */
+					err := checkHost(target, Payloads{special, ""}, client)
+					if err != nil {
+						fmt.Println(err)
+					}
+				}
+
 				for x := range payloads {
 					/*
 					 * need to account for 20 (or however many) go routines with X amount of payloads, with multiple variations for each one
