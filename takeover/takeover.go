@@ -138,6 +138,7 @@ func main() {
 	for i := 0; i < 30; i++ {
 		wg.Add(1)
 		go func() {
+                        defer wg.Done()
 			for host := range hosts {
 				cname, found, index := dnsCname(host, fpItems)
 				if found {
@@ -152,13 +153,17 @@ func main() {
 					}
 				}
 			}
-			wg.Done()
 		}()
 	}
 
 	scanner := bufio.NewScanner(hostInput)
 	for scanner.Scan() {
-		hosts <- scanner.Text()
+                current := scanner.Text()
+                if !strings.HasPrefix(current, "http://") && !strings.HasPrefix(current, "https://") {
+                        current = "https://" + current
+                }
+
+		hosts <- current
 	}
 
 	close(hosts)
