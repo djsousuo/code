@@ -12,6 +12,8 @@ import (
 	"sync"
 )
 
+var response int
+
 func fetch(url string) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
@@ -24,7 +26,11 @@ func fetch(url string) {
 		log.Fatal(err)
 	}
 
-	fmt.Println(resp.StatusCode, url, strings.Join(resp.Header["Content-Type"], " "), resp.Header["Content-Length"], resp.Header["Server"])
+        if response != 0 && resp.StatusCode == response {
+                fmt.Println(url)
+        } else {
+	        fmt.Println(resp.StatusCode, url, strings.Join(resp.Header["Content-Type"], " "), resp.Header["Server"])
+        }
 	resp.Body.Close()
 }
 
@@ -33,6 +39,7 @@ func main() {
 	var concurrency int
 
 	flag.StringVar(&method, "method", "GET", "HTTP Method to use (GET/POST)")
+        flag.IntVar(&response, "r", 0, "Return only URL's matching HTTP response code (0 = all)")
 	flag.IntVar(&concurrency, "c", 20, "Number of concurrent requests (default: 20)")
 	flag.Parse()
 
@@ -44,10 +51,10 @@ func main() {
 	for i := 0; i < concurrency; i++ {
 		wg.Add(1)
 		go func() {
+                        defer wg.Done()
 			for u := range urls {
 				fetch(u)
 			}
-			wg.Done()
 		}()
 	}
 
@@ -58,7 +65,6 @@ func main() {
 			current = "https://" + current
 		}
 
-		fmt.Println("Trying " + current)
 		urls <- current
 	}
 
