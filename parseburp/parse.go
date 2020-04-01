@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"bytes"
+        "errors"
 	"encoding/base64"
 	"encoding/json"
 	"encoding/xml"
@@ -60,41 +61,40 @@ type Options struct {
 	Encoding bool
 }
 
-func decodeURL(data string) string {
+func decodeURL(data string) (string, error) {
 	tmp, err := url.QueryUnescape(data)
 	if err != nil {
-		return "Error: decodeURL()"
+                return "", err
 	}
-	return tmp
+	return tmp, nil
 }
 
-func decodeBase64(data string) string {
+func decodeBase64(data string) (string, error) {
 	if len(data) < 1 {
-		return "NULL"
+                return "", errors.New("decodeBase64: len < 1")
 	}
 
 	b64, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
-		return "Error: decodeBase64()"
+		return "", err
 	}
 
 	if !unicode.IsPrint(rune(b64[0])) {
-		return "<Binary Data>"
+                return "", errors.New("decodeBase64: binary data")
 	}
 
-	return string(b64)
+	return string(b64), nil
 }
 
 /* separate an HTTP request into (headers, body) */
-func parseRequest(request string) (string, string) {
+func parseRequest(request string) (string, string, error) {
 	var headers []string
 
 	scanner := bufio.NewReader(strings.NewReader(request))
 
 	req, err := http.ReadRequest(scanner)
 	if err != nil {
-		fmt.Println("Error: http.ReadRequest()")
-		return "error", "error"
+                return "", "", errors.New("parseRequest: http.ReadRequest()")
 	}
 
 	for name, head := range req.Header {
@@ -105,11 +105,10 @@ func parseRequest(request string) (string, string) {
 
 	err = req.ParseForm()
 	if err != nil {
-		fmt.Println("Error: ParseForm()")
-		return "error", "error"
+                return "", "", errors.New("parseRequest: ParseForm()")
 	}
 
-	return strings.Join(headers, "\n"), req.Form.Encode()
+	return strings.Join(headers, "\n"), req.Form.Encode(), nil
 }
 
 func main() {
@@ -140,19 +139,39 @@ func main() {
 			cur.Mime = strings.ToUpper(cur.Mime)
 		}
 
-		headers, params := parseRequest(decodeBase64(cur.Req))
+                request, err := decodeBase64(cur.Req)
+                if err != nil {
+                        continue
+                }
+
+                response, err := decodeBase64(cur.Resp)
+                if err != nil {
+                        continue
+                }
+
+		headers, params, err := parseRequest(request)
+                if err != nil {
+                        continue
+                }
+
+                decodedURL, err := decodeURL(cur.URL)
+                if err != nil {
+                        continue
+                }
+
+
 		m := Logs{cur.Time,
-			decodeURL(cur.URL),
+			decodedURL,
 			cur.Host,
 			cur.Port,
 			cur.Proto,
 			cur.Method,
 			cur.Path,
-			decodeBase64(cur.Req),
+			request,
 			cur.Status,
 			cur.Length,
 			cur.Mime,
-			decodeBase64(cur.Resp),
+			response,
 			headers,
 			params}
 
