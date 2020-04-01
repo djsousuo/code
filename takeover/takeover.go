@@ -30,7 +30,7 @@ func dnsCname(host string, fp []Fingerprints) (string, bool, int) {
 	reply, err := dns.Exchange(msg, "4.2.2.4:53")
 
 	if err != nil {
-		return "[-] DNS Lookup", false, -1
+		return "", false, -1
 	}
 
 	for _, answer := range reply.Answer {
@@ -47,7 +47,7 @@ func dnsCname(host string, fp []Fingerprints) (string, bool, int) {
 		}
 	}
 
-	return "[-] No matches found", false, -1
+	return "", false, -1
 }
 
 func dnsNx(host string, cname string) bool {
@@ -135,24 +135,24 @@ func main() {
 	hosts := make(chan string)
 	var wg sync.WaitGroup
 
-	for i := 0; i < 30; i++ {
+	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func() {
-                        defer wg.Done()
 			for host := range hosts {
 				cname, found, index := dnsCname(host, fpItems)
 				if found {
 					if fpItems[index].Nxdomain && dnsNx(host, cname) {
-						fmt.Println("[*] " + fpItems[index].Service + " NXDOMAIN: " + host + " CNAME: " + cname)
+						fmt.Println("[*] " + strings.ToUpper(fpItems[index].Service) + " NXDOMAIN: " + host + " CNAME: " + cname)
 						continue
 					}
 
 					if checkHost(host, cname, client, fpItems[index].Fingerprint) {
-						fmt.Println("[*] " + fpItems[index].Service + " " + host + " CNAME: " + cname)
+						fmt.Println("[*] " + strings.ToUpper(fpItems[index].Service) + " " + host + " CNAME: " + cname)
 						continue
 					}
 				}
 			}
+                        wg.Done()
 		}()
 	}
 
