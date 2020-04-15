@@ -18,7 +18,7 @@ func init() {
 func randomSub() string {
 	const possible = "abcdefghijklmnopqrstuvwxyz0123456789"
 
-	b := make([]byte, 12)
+	b := make([]byte, 16)
 	for i := range b {
 		b[i] = possible[rand.Int63()%int64(len(possible))]
 	}
@@ -71,7 +71,7 @@ func main() {
 		inWait.Add(1)
 		go func() {
 			for h := range in {
-				if resolve(randomSub() + h) {
+				if found := resolve(randomSub() + h); found {
 					out <- h
 				}
 			}
@@ -81,13 +81,11 @@ func main() {
 
 	for input.Scan() {
 		domain, try := splitHost(input.Text())
-		if !try {
+		_, ok := allDomains[domain]
+		if !try || ok {
 			continue
 		}
 
-		if _, ok := allDomains[domain]; ok {
-			continue
-		}
 		allDomains[domain] = true
 		in <- domain
 	}
