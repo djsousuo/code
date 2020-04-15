@@ -7,6 +7,7 @@ import (
 	"net"
 	"os"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -50,8 +51,33 @@ func resolve(host string) bool {
 }
 
 func main() {
+	var inWait sync.WaitGroup
+	var outWait sync.WaitGroup
+
 	allDomains := make(map[string]bool)
 	input := bufio.NewScanner(os.Stdin)
+	in := make(chan string)
+	out := make(chan string)
+
+	outWait.Add(1)
+	go func() {
+		for o := range out {
+			fmt.Println(o)
+		}
+		outWait.Done()
+	}()
+
+	for i := 0; i < 30; i++ {
+		inWait.Add(1)
+		go func() {
+			for h := range in {
+				if resolve(randomSub() + h) {
+					out <- h
+				}
+			}
+			inWait.Done()
+		}()
+	}
 
 	for input.Scan() {
 		domain, try := splitHost(input.Text())
@@ -63,12 +89,10 @@ func main() {
 			continue
 		}
 		allDomains[domain] = true
-
-		for i := 0; i < 5; i++ {
-			if found := resolve(randomSub() + domain); found {
-				fmt.Println(domain)
-				break
-			}
-		}
+		in <- domain
 	}
+	close(in)
+	inWait.Wait()
+	close(out)
+	outWait.Wait()
 }
