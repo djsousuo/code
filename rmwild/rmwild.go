@@ -5,11 +5,18 @@ import (
 	"fmt"
 	"math/rand"
 	"net"
+	"flag"
 	"os"
 	"strings"
+	"context"
 	"sync"
 	"time"
 )
+
+var Opt struct {
+	NS string
+	Reverse bool
+}
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -42,8 +49,17 @@ func splitHost(host string) (domain string, try bool) {
 }
 
 func resolve(host string) bool {
-	addrs, err := net.LookupHost(host)
-	if err != nil || addrs == nil {
+	resolver := &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			d := net.Dialer{
+				Timeout: time.Duration(15 * time.Second),
+			}
+			return d.DialContext(ctx, "udp", string(Opt.NS + ":53"))
+		},
+	}
+
+	if _, err := resolver.LookupHost(context.Background(), host); err != nil {
 		return false
 	}
 
@@ -53,6 +69,11 @@ func resolve(host string) bool {
 func main() {
 	var inWait sync.WaitGroup
 	var outWait sync.WaitGroup
+	var mu sync.Mutex
+
+	flag.StringVar(&Opt.NS, "n", "4.2.2.4", "Nameserver to use for lookups")
+	flag.BoolVar(&Opt.Reverse, "r", false, "Reverse mode (only show hosts with no wildcards)")
+	flag.Parse()
 
 	allDomains := make(map[string]bool)
 	input := bufio.NewScanner(os.Stdin)
@@ -71,8 +92,25 @@ func main() {
 		inWait.Add(1)
 		go func() {
 			for h := range in {
-				if found := resolve(randomSub() + h); found {
+				domain, try := splitHost(h)
+
+				mu.Lock()
+				_, found := allDomains[domain]
+				allDomains[domain] = true
+				mu.Unlock()
+
+				if !try || found {
+					if Opt.Reverse {
+						fmt.Println(h)
+					}
+					continue
+				}
+
+				result := resolve(randomSub() + domain)
+				if !result && Opt.Reverse {
 					out <- h
+				} else if result && !Opt.Reverse {
+					out <- domain
 				}
 			}
 			inWait.Done()
@@ -80,14 +118,7 @@ func main() {
 	}
 
 	for input.Scan() {
-		domain, try := splitHost(input.Text())
-		_, ok := allDomains[domain]
-		if !try || ok {
-			continue
-		}
-
-		allDomains[domain] = true
-		in <- domain
+		in <- input.Text()
 	}
 	close(in)
 	inWait.Wait()
