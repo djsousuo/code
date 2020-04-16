@@ -2,19 +2,20 @@ package main
 
 import (
 	"bufio"
+	"context"
+	"flag"
 	"fmt"
 	"math/rand"
 	"net"
-	"flag"
 	"os"
 	"strings"
-	"context"
 	"sync"
 	"time"
+	"errors"
 )
 
 var Opt struct {
-	NS string
+	NS      string
 	Reverse bool
 }
 
@@ -33,19 +34,19 @@ func randomSub() string {
 	return string(b)
 }
 
-func splitHost(host string) (domain string, try bool) {
+func splitHost(host string) (domain string, err error) {
 	var d string
 
 	s := strings.Split(host, ".")
 	if len(s) < 3 {
-		return host, false
+		return host, errors.New("splitHost: already at TLD")
 	}
 
 	s = s[1:]
 	for i := range s {
 		d = d + "." + s[i]
 	}
-	return d, true
+	return d, nil
 }
 
 func resolve(host string) bool {
@@ -55,7 +56,7 @@ func resolve(host string) bool {
 			d := net.Dialer{
 				Timeout: time.Duration(15 * time.Second),
 			}
-			return d.DialContext(ctx, "udp", string(Opt.NS + ":53"))
+			return d.DialContext(ctx, "udp", string(Opt.NS+":53"))
 		},
 	}
 
@@ -92,14 +93,14 @@ func main() {
 		inWait.Add(1)
 		go func() {
 			for h := range in {
-				domain, try := splitHost(h)
+				domain, err := splitHost(h)
 
 				mu.Lock()
 				_, found := allDomains[domain]
 				allDomains[domain] = true
 				mu.Unlock()
 
-				if !try || found {
+				if err != nil || found {
 					if Opt.Reverse {
 						fmt.Println(h)
 					}
@@ -107,6 +108,7 @@ func main() {
 				}
 
 				result := resolve(randomSub() + domain)
+
 				if !result && Opt.Reverse {
 					out <- h
 				} else if result && !Opt.Reverse {
