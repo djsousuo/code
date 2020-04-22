@@ -39,18 +39,17 @@ type State struct {
 
 var Config struct {
 	Discord struct {
-		Username string `json:"username"`
-		Webhook  string `json:"webhook"`
-		Timeout	 float64 `json:"timeout"`
-		MaxLen	 int	`json:"maxentries"`
+		Username string  `json:"username"`
+		Webhook  string  `json:"webhook"`
+		Timeout  float64 `json:"timeout"`
+		MaxLen   int     `json:"maxentries"`
 	}
-	NS      string
-	UA	string
-	Timeout int
-	Retries	int
-	Verbose	bool
+	NS          string
+	UA          string
+	Timeout     int
+	Retries     int
+	Verbose     bool
 	Concurrency int
-
 }
 var fpItems []Fingerprints
 
@@ -119,7 +118,7 @@ func dnsCNAME(host string) (string, error) {
 	return cname, nil
 }
 
-func dnsNS(host string) ([]string) {
+func dnsNS(host string) []string {
 	var ns []string
 	msg := new(dns.Msg)
 	msg.SetQuestion(host, dns.TypeNS)
@@ -140,7 +139,7 @@ func dnsNS(host string) ([]string) {
 func dnsA(host string, ns string) (string, bool) {
 	msg := new(dns.Msg)
 	msg.SetQuestion(host, dns.TypeA)
-	reply, err := dns.Exchange(msg, ns + ":53")
+	reply, err := dns.Exchange(msg, ns+":53")
 	if err != nil {
 		return "", false
 	}
@@ -206,7 +205,7 @@ func checkHost(host string, state *State) {
 	if found {
 		/* NXDOMAIN takeover */
 		if fpItems[index].Nxdomain && nx {
-			str := string("[*] " + strings.ToUpper(fpItems[index].Service) + " NXDOMAIN: " + host + " CNAME: " + cname)
+			str := fmt.Sprintf("[*] %s NXDOMAIN: %s CNAME: %s", strings.ToUpper(fpItems[index].Service), host, cname)
 			fmt.Println(str)
 			state.Update(str)
 			return
@@ -214,7 +213,7 @@ func checkHost(host string, state *State) {
 
 		/* traditional CNAME takeover with website fingerprint */
 		if verifyFingerprint(host, cname, fpItems[index].Fingerprint, state) {
-			str := string("[*] " + strings.ToUpper(fpItems[index].Service) + " " + host + " CNAME: " + cname)
+			str := fmt.Sprintf("[*] %s %s CNAME: %s", strings.ToUpper(fpItems[index].Service), host, cname)
 			fmt.Println(str)
 			state.Update(str)
 			return
@@ -286,7 +285,7 @@ func main() {
 		}
 	}
 
-	timeout := time.Duration(15 * time.Second)
+	timeout := 15 * time.Second
 	var transport = &http.Transport{
 		MaxIdleConns:      30,
 		IdleConnTimeout:   time.Second,
@@ -310,7 +309,7 @@ func main() {
 
 	loadJSON("config.json", &fpItems)
 	loadJSON("bot.json", &Config.Discord)
-	Config.NS = string("4.2.2.4:53")
+	Config.NS = "4.2.2.4:53"
 	hosts := make(chan string)
 	var wg sync.WaitGroup
 
