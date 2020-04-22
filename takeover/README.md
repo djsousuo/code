@@ -1,5 +1,6 @@
 # takeover
-Subdomain takeover tool supporting concurrency, NXDOMAIN based takeovers, and more
+Subdomain takeover tool supporting concurrency, NXDOMAIN based takeovers, etc.
+Sends positive results to Discord webhook
 
 # Configuration
 Config has been ripped from subjack and modified with new and up to date entries
