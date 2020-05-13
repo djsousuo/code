@@ -216,12 +216,12 @@ func workerProc(r *http.Response, conf *config) {
 
 func elasticProc() {
 	ctx := context.Background()
-	client, err := elastic.NewClient(elastic.SetURL("http://sto.movsx.dev:9200"), elastic.SetSniff(false))
+	client, err := elastic.NewClient(elastic.SetURL("http://elastic.movsx.dev:9200"), elastic.SetSniff(false))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	info, code, err := client.Ping("http://sto.movsx.dev:9200").Do(ctx)
+	info, code, err := client.Ping("http://elastic.movsx.dev:9200").Do(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
