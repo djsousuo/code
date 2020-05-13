@@ -3,7 +3,17 @@ Subdomain takeover tool supporting concurrency, NXDOMAIN based takeovers, etc.
 Sends positive results to Discord webhook
 
 # Configuration
-Config has been ripped from subjack and modified with new and up to date entries
+Edit config.json and fill out relevant details.
+
+* discord
+username/webhook to send discord events to
+timeout is the delay between sending results
+
+* general
+nameserver: NS to use for lookups
+user agent: self explanatory
+concurrency: number of goroutines to use
+retries: max # of retries to make for DNS queries
 
 # Example Usage
 `./takeover <file>`
@@ -12,4 +22,4 @@ Config has been ripped from subjack and modified with new and up to date entries
 
 # TODO
 * Add support for regex fingerprints
-* Eliminate false positives (s3, fastly)
+* Add support for multiple resolvers
