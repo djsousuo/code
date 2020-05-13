@@ -27,6 +27,7 @@ func processFocus(ctx context.Context, client sway.Client, node *sway.Node) {
 		return
 	}
 
+	fmt.Printf("appid: %s\n", *node.AppID)
 	if node.Type != "con" {
 		return
 	}
