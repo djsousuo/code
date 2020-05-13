@@ -117,7 +117,7 @@ func matchFingerprint(cname string) *Fingerprints {
 
 func checkHost(host string, state *State) {
 	aHost := absoluteHost(host)
-	cname, _ := dnsCNAME(aHost)
+	cname, _ := dnsCNAME(aHost, Config.Retries)
 	if cname == "" {
 		return
 	}
@@ -125,7 +125,7 @@ func checkHost(host string, state *State) {
 	found := matchFingerprint(cname)
 	if found != nil {
 		nx := false
-		if answer, err := dnsA(cname, Config.NS); answer == nil && err == nil {
+		if answer, err := dnsA(cname, Config.NS, Config.Retries); answer == nil && err == nil {
 			nx = true
 		}
 
