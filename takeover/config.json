@@ -1,7 +1,7 @@
 {
 	"discord": {
         	"username": "STO",
-		"webhook": "https://discordapp.com/api/webhooks/697785481420734465/X8jRb9G5fGLa7CfsigZPNB7ZQcZpKLZQeKtcOU1iUbgFvwx8Emy4f0O-huS0g10Uxd3t",
+		"webhook": "https://discordapp.com/api/webhooks/<webhook>",
 		"timeout": 300,
 		"maxentries": 30
 	},
