@@ -6,7 +6,7 @@ import (
 )
 
 func dnsCheckTimeout(err error, tries int) bool {
-	if strings.HasSuffix(err.Error(), "i/o timeout") && tries > Config.Retries {
+	if strings.HasSuffix(err.Error(), "i/o timeout") && tries > 0 {
 		return true
 	}
 
@@ -19,7 +19,7 @@ func dnsCNAME(host string) (string, error) {
 	tries := Config.Retries
 	msg := new(dns.Msg)
 	msg.SetQuestion(host, dns.TypeA)
-	reply, err := dns.Exchange(msg, Config.NS + ":53")
+	reply, err := dns.Exchange(msg, Config.NS+":53")
 	if err != nil {
 		if dnsCheckTimeout(err, tries) {
 			tries--
@@ -44,7 +44,7 @@ func dnsNS(host string) ([]string, error) {
 	tries := Config.Retries
 	msg := new(dns.Msg)
 	msg.SetQuestion(host, dns.TypeNS)
-	reply, err := dns.Exchange(msg, Config.NS + ":53")
+	reply, err := dns.Exchange(msg, Config.NS+":53")
 	if err != nil {
 		if dnsCheckTimeout(err, tries) {
 			tries--
@@ -72,7 +72,7 @@ func dnsA(host string, ns string) ([]string, error) {
 		},
 	}
 	msg.SetQuestion(host, dns.TypeA)
-	reply, err := dns.Exchange(msg, ns + ":53")
+	reply, err := dns.Exchange(msg, ns+":53")
 	if err != nil {
 		if dnsCheckTimeout(err, tries) {
 			tries--
@@ -89,15 +89,15 @@ func dnsA(host string, ns string) ([]string, error) {
 
 	return a, nil
 	/*
-	if reply.Rcode == dns.RcodeNameError {
-		return ns, true
-	}
-	return "", false
+		if reply.Rcode == dns.RcodeNameError {
+			return ns, true
+		}
+		return "", false
 
-	if reply.Rcode == dns.RcodeServerFailure || reply.Rcode == dns.RcodeRefused {
-		return ns, true
-	}
-	return "", false
+		if reply.Rcode == dns.RcodeServerFailure || reply.Rcode == dns.RcodeRefused {
+			return ns, true
+		}
+		return "", false
 	*/
 }
 
