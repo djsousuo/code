@@ -38,11 +38,11 @@ var Config struct {
 		Timeout  float64 `json:"timeout"`
 		MaxLen   int     `json:"maxentries"`
 	} `json:"discord"`
-	NS          string	`json:"nameserver"`
-	UA          string	`json:"user_agent"`
-	Timeout     int		`json:"timeout"`
-	Retries     int		`json:"retries"`
-	Concurrency int		`json:"concurrency"`
+	NS          string `json:"nameserver"`
+	UA          string `json:"user_agent"`
+	Timeout     int    `json:"timeout"`
+	Retries     int    `json:"retries"`
+	Concurrency int    `json:"concurrency"`
 }
 var fpItems []Fingerprints
 
@@ -116,14 +116,12 @@ func matchFingerprint(cname string) *Fingerprints {
 }
 
 func checkHost(host string, state *State) {
-	aHost := absoluteHost(host)
-	cname, _ := dnsCNAME(aHost, Config.Retries)
+	cname, _ := dnsCNAME(absoluteHost(aHost), Config.Retries)
 	if cname == "" {
 		return
 	}
 
-	found := matchFingerprint(cname)
-	if found != nil {
+	if found := matchFingerprint(cname); found != nil {
 		nx := false
 		if answer, err := dnsA(cname, Config.NS, Config.Retries); answer == nil && err == nil {
 			nx = true
@@ -135,24 +133,6 @@ func checkHost(host string, state *State) {
 			state.Update(str)
 		}
 	}
-
-	/* edge case: route53 with SERVFAIL/REFUSED at awsdns */
-	/*
-		if nx && err == nil {
-			ns := dnsNS(aHost)
-			if ns != nil {
-				for i := range ns {
-					if strings.Contains(ns[i], "awsdns") {
-						if cname != "" {
-							dnsA(cname, ns[i])
-						} else {
-							dnsA(aHost, ns[i])
-						}
-					}
-				}
-			}
-		}
-	*/
 }
 
 func verifyFingerprint(host string, fp []string, state *State) bool {
