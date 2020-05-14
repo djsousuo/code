@@ -1,19 +1,24 @@
 # takeover
-Subdomain takeover tool supporting concurrency, NXDOMAIN based takeovers, etc.
-Sends positive results to Discord webhook
+* Subdomain takeover tool supporting hosted as well as dangling CNAME based takeovers.
+* Concurrent and supports multiple resolvers, as well as custom timeouts for DNS/HTTP
+* Option to send positive results to Discord webhook
+* 50+ fingerprints for vulnerable services
 
 # Configuration
-Edit config.json and fill out relevant details.
+Edit config.json
 
-* discord
-username/webhook to send discord events to
-timeout is the delay between sending results
+## Discord Configuration
+* username: Name that messages will be displayed from
+* webhook: URL to send events to
+* timeout: Delay between sending results
+* maxentries: Number of results to send per request
 
-* general
-nameserver: NS to use for lookups
-user agent: self explanatory
-concurrency: number of goroutines to use
-retries: max # of retries to make for DNS queries
+## General Settings
+* resolvers: Path to text file containing DNS resolvers
+* user_agent: UA to send for HTTP requests
+* concurrency: Number of goroutines to use
+* timeout: Timeout for requests
+* retries: Maximum # of retries to make for DNS queries that timeout
 
 # Example Usage
 `./takeover <file>`
@@ -22,4 +27,4 @@ retries: max # of retries to make for DNS queries
 
 # TODO
 * Add support for regex fingerprints
-* Add support for multiple resolvers
+* Verify results for false positives (Azure services, Webflow, etc)
