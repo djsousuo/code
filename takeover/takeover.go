@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"net"
 	"net/http"
 	"os"
@@ -38,11 +39,13 @@ var Config struct {
 		Timeout  float64 `json:"timeout"`
 		MaxLen   int     `json:"maxentries"`
 	} `json:"discord"`
-	NS          string `json:"nameserver"`
+	Resolvers   string `json:"resolvers"`
 	UA          string `json:"user_agent"`
 	Timeout     int    `json:"timeout"`
 	Retries     int    `json:"retries"`
 	Concurrency int    `json:"concurrency"`
+	NSList      []string
+	Rand        *rand.Rand
 }
 var fpItems []Fingerprints
 
@@ -77,7 +80,7 @@ func discordMsg(msg string, state *State) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	_ = resp.Body.Close()
 
 	return nil
 }
@@ -116,14 +119,14 @@ func matchFingerprint(cname string) *Fingerprints {
 }
 
 func checkHost(host string, state *State) {
-	cname, _ := dnsCNAME(absoluteHost(aHost), Config.Retries)
+	var cname, _ = dnsCNAME(absoluteHost(host), Config.Retries)
 	if cname == "" {
 		return
 	}
 
 	if found := matchFingerprint(cname); found != nil {
 		nx := false
-		if answer, err := dnsA(cname, Config.NS, Config.Retries); answer == nil && err == nil {
+		if answer, err := dnsA(cname, Config.Retries); answer == nil && err == nil {
 			nx = true
 		}
 
@@ -153,7 +156,7 @@ func verifyFingerprint(host string, fp []string, state *State) bool {
 
 	if resp != nil {
 		bodyBytes, _ := ioutil.ReadAll(resp.Body)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		bodyStr := strings.ToLower(string(bodyBytes))
 		for i := range fp {
 			if strings.Contains(bodyStr, strings.ToLower(fp[i])) {
@@ -206,7 +209,19 @@ func main() {
 	loadJSON("fingerprints.json", &fpItems)
 	loadJSON("config.json", &Config)
 
-	timeout := time.Duration(time.Duration(Config.Timeout) * time.Second)
+	resolverInput, err := os.Open(Config.Resolvers)
+	if err != nil {
+		log.Fatal(err)
+	}
+	scanner := bufio.NewScanner(resolverInput)
+	for scanner.Scan() {
+		Config.NSList = append(Config.NSList, scanner.Text())
+	}
+	resolverInput.Close()
+
+	Config.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	timeout := time.Duration(Config.Timeout) * time.Second
 	var transport = &http.Transport{
 		MaxIdleConns:      30,
 		IdleConnTimeout:   time.Second,
@@ -244,7 +259,7 @@ func main() {
 		}()
 	}
 
-	scanner := bufio.NewScanner(hostInput)
+	scanner = bufio.NewScanner(hostInput)
 	for scanner.Scan() {
 		hosts <- scanner.Text()
 	}

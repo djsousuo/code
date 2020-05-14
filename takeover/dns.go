@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/miekg/dns"
+	"math/rand"
 	"strings"
-	"fmt"
 )
 
 func dnsCheckTimeout(err error, tries int) bool {
@@ -14,17 +14,21 @@ func dnsCheckTimeout(err error, tries int) bool {
 	return false
 }
 
+func dnsRandomResolver() string {
+	random := Config.NSList[rand.Intn(len(Config.NSList))]
+	return random
+}
+
 func dnsCNAME(host string, tries int) (string, error) {
 	var cname string
 
 	msg := new(dns.Msg)
 	msg.SetQuestion(host, dns.TypeA)
-	reply, err := dns.Exchange(msg, Config.NS + ":53")
+	reply, err := dns.Exchange(msg, dnsRandomResolver()+":53")
 	if err != nil {
 		if dnsCheckTimeout(err, tries) {
-			return dnsCNAME(host, tries - 1)
+			return dnsCNAME(host, tries-1)
 		}
-
 		return "", err
 	}
 
@@ -42,10 +46,10 @@ func dnsNS(host string, tries int) ([]string, error) {
 
 	msg := new(dns.Msg)
 	msg.SetQuestion(host, dns.TypeNS)
-	reply, err := dns.Exchange(msg, Config.NS + ":53")
+	reply, err := dns.Exchange(msg, dnsRandomResolver()+":53")
 	if err != nil {
 		if dnsCheckTimeout(err, tries) {
-			return dnsNS(host, tries - 1)
+			return dnsNS(host, tries-1)
 		}
 		return nil, err
 	}
@@ -59,7 +63,7 @@ func dnsNS(host string, tries int) ([]string, error) {
 	return ns, nil
 }
 
-func dnsA(host string, ns string, tries int) ([]string, error) {
+func dnsA(host string, tries int) ([]string, error) {
 	var a []string
 
 	msg := &dns.Msg{
@@ -68,10 +72,10 @@ func dnsA(host string, ns string, tries int) ([]string, error) {
 		},
 	}
 	msg.SetQuestion(host, dns.TypeA)
-	reply, err := dns.Exchange(msg, ns + ":53")
+	reply, err := dns.Exchange(msg, dnsRandomResolver()+":53")
 	if err != nil {
 		if dnsCheckTimeout(err, tries) {
-			return dnsA(host, ns, tries - 1)
+			return dnsA(host, tries-1)
 		}
 		return nil, err
 	}
