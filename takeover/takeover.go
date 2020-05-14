@@ -130,7 +130,7 @@ func checkHost(host string, state *State) {
 			nx = true
 		}
 
-		if (found.Nxdomain && nx) || (verifyFingerprint(host, found.Fingerprint, state) && !nx) {
+		if (nx && found.Nxdomain) || (!nx && verifyFingerprint(host, found.Fingerprint, state)) {
 			str := fmt.Sprintf("[*] %s %s CNAME: %s", strings.ToUpper(found.Service), host, cname)
 			fmt.Println(str)
 			state.Update(str)
