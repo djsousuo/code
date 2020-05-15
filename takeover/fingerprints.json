@@ -9,6 +9,16 @@
 		],
 		"nxdomain": false
 	},
+        {
+                "service": "uberflip",
+                "cname": [
+                        "uberflip.com"
+                ],
+                "fingerprint": [
+                        "Please check the URL"
+                ],
+                "nxdomain": false
+        },
 	{
 		"service": "ibm container",
 		"cname": [
