@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/miekg/dns"
 	"math/rand"
 	"strings"
@@ -78,6 +79,10 @@ func dnsA(host string, tries int) ([]string, error) {
 			return dnsA(host, tries-1)
 		}
 		return nil, err
+	}
+
+	if reply.Rcode == dns.RcodeRefused {
+		return nil, errors.New("Refused")
 	}
 
 	for _, answer := range reply.Answer {
