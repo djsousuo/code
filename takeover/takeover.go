@@ -243,7 +243,7 @@ func main() {
 		},
 	}
 
-	hosts := make(chan string)
+	hosts := make(chan string, Config.Concurrency * 20)
 	var wg sync.WaitGroup
 
 	for i := 0; i < Config.Concurrency; i++ {
