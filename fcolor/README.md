@@ -1,20 +1,10 @@
-# Autotiler
-Autotiler for Sway WM
-
-Auto-tiles windows with different layouts to make maximum use of screen space.
-
-Uses go-sway package for IPC
+# fcolor
+Parses & prints ffuf output with colors
 
 # Example Usage
-Build package:
 
 ```
-$ go get github.com/joshuarubin/go-sway
-$ go install
-```
-
-Add an exec statement to your sway config file
-
-```
-exec $GOBIN/autotiler
+$ go get github.com/fatih/color
+$ go built
+$ ./fcolor *.json
 ```
